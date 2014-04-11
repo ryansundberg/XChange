@@ -52,7 +52,6 @@ import com.xeiam.xchange.utils.Assert;
 public abstract class BaseWebSocketExchangeService extends BaseExchangeService implements StreamingExchangeService {
 
   private final Logger log = LoggerFactory.getLogger(BaseWebSocketExchangeService.class);
-  private final Timer timer = new Timer();
   private final ExchangeStreamingConfiguration exchangeStreamingConfiguration;
 
   /**
@@ -61,6 +60,7 @@ public abstract class BaseWebSocketExchangeService extends BaseExchangeService i
   protected final BlockingQueue<ExchangeEvent> consumerEventQueue = new LinkedBlockingQueue<ExchangeEvent>();
 
   protected ReconnectService reconnectService;
+  private Timer timer;
 
   /**
    * The exchange event producer
@@ -76,75 +76,98 @@ public abstract class BaseWebSocketExchangeService extends BaseExchangeService i
 
     super(exchangeSpecification);
     this.exchangeStreamingConfiguration = exchangeStreamingConfiguration;
-    reconnectService = new ReconnectService(this, exchangeStreamingConfiguration);
+    reconnectService = new ReconnectService(this, exchangeStreamingConfiguration); // re-connect enabled by default
   }
 
-  protected synchronized void internalConnect(URI uri, ExchangeEventListener exchangeEventListener, Map<String, String> headers) {
-
-    log.debug("internalConnect");
-
+  protected void internalConnect(URI uri, ExchangeEventListener exchangeEventListener, Map<String, String> headers) {
+    log.debug("internalConnect to {}", uri);
     // Validate inputs
     Assert.notNull(exchangeEventListener, "runnableExchangeEventListener cannot be null");
-
-    try {
-      log.debug("Attempting to open a websocket against {}", uri);
-      this.exchangeEventProducer = new WebSocketEventProducer(uri.toString(), exchangeEventListener, headers, reconnectService);
-      exchangeEventProducer.connect();
-    } catch (URISyntaxException e) {
-      throw new ExchangeException("Failed to open websocket!", e);
-    }
-
-    if (exchangeStreamingConfiguration.keepAlive()) {
-      timer.schedule(new KeepAliveTask(), 15000, 15000);
+    
+    synchronized (consumerEventQueue) { // sync on this object for connection state, since it is always present
+      try {
+        log.debug("Attempting to open a websocket on {}", uri);
+        exchangeEventProducer = new WebSocketEventProducer(uri.toString(), exchangeEventListener, headers, reconnectService);
+        exchangeEventProducer.connect();
+      } catch (URISyntaxException e) {
+        throw new ExchangeException("Failed to open websocket!", e);
+      }
+  
+      if (exchangeStreamingConfiguration.keepAlive()) {
+        timer = new Timer();
+        timer.schedule(new KeepAliveTask(), 15000, 15000);
+      }
     }
   }
 
   @Override
-  public synchronized void disconnect() {
-
-    if (exchangeEventProducer != null) {
-      exchangeEventProducer.close();
+  public void disconnect() {
+    log.debug("Disconnecting websocket.");
+    synchronized (consumerEventQueue) {
+      if (timer != null) {
+        timer.cancel();
+        timer = null;
+      }
+      if (exchangeEventProducer != null) {
+        exchangeEventProducer.close();
+        exchangeEventProducer = null;
+      }
     }
-    log.debug("disconnect() called");
+  }
+  
+  @Override
+  public void start() {
+    connect();
+    reconnectService.start();
+  }
+  
+  @Override
+  public void stop() {
+    reconnectService.stop();
+    disconnect();
   }
 
   @Override
   public ExchangeEvent getNextEvent() throws InterruptedException {
-
-    ExchangeEvent event = consumerEventQueue.take();
-    return event;
+    return consumerEventQueue.take();
   }
 
-  public synchronized ExchangeEvent checkNextEvent() throws InterruptedException {
-
+  public ExchangeEvent checkNextEvent() throws InterruptedException {
     if (consumerEventQueue.isEmpty()) {
       TimeUnit.MILLISECONDS.sleep(100);
     }
-    ExchangeEvent event = consumerEventQueue.peek();
-    return event;
+    return consumerEventQueue.peek();
   }
 
   @Override
   public void send(String msg) {
-
     exchangeEventProducer.send(msg);
   }
 
   @Override
   public READYSTATE getWebSocketStatus() {
-
-    return exchangeEventProducer.getConnection().getReadyState();
+    synchronized (consumerEventQueue) {
+      if (exchangeEventProducer == null) {
+        return READYSTATE.NOT_YET_CONNECTED;
+      }
+      else {
+        return exchangeEventProducer.getConnection().getReadyState();
+      }
+    }
   }
 
   class KeepAliveTask extends TimerTask {
 
     @Override
     public void run() {
-
-      // log.debug("Keep-Alive ping sent.");
-      FramedataImpl1 frame = new FramedataImpl1(Opcode.PING);
-      frame.setFin(true);
-      exchangeEventProducer.getConnection().sendFrame(frame);
+      synchronized (consumerEventQueue) {
+        if (exchangeEventProducer != null) {
+          // log.debug("Keep-Alive ping sent.");
+          FramedataImpl1 frame = new FramedataImpl1(Opcode.PING);
+          frame.setFin(true);
+          exchangeEventProducer.getConnection().sendFrame(frame);
+        }
+      }
     }
   }
 

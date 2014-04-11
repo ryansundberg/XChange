@@ -64,7 +64,6 @@ public class WebSocketEventProducer extends WebSocketClient {
     super(new URI(url), new Draft_17(), headers, 0);
     this.exchangeEventListener = exchangeEventListener;
     this.reconnectService = reconnectService;
-
   }
 
   @Override

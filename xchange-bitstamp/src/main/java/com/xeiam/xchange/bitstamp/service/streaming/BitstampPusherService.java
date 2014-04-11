@@ -36,6 +36,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pusher.client.Pusher;
 import com.pusher.client.channel.Channel;
 import com.pusher.client.channel.SubscriptionEventListener;
+import com.pusher.client.connection.ConnectionEventListener;
+import com.pusher.client.connection.ConnectionStateChange;
+import com.pusher.client.connection.ConnectionState;
 import com.xeiam.xchange.ExchangeSpecification;
 import com.xeiam.xchange.bitstamp.BitstampAdapters;
 import com.xeiam.xchange.bitstamp.dto.marketdata.BitstampStreamingOrderBook;
@@ -45,6 +48,7 @@ import com.xeiam.xchange.dto.marketdata.OrderBook;
 import com.xeiam.xchange.service.streaming.DefaultExchangeEvent;
 import com.xeiam.xchange.service.streaming.ExchangeEvent;
 import com.xeiam.xchange.service.streaming.ExchangeEventType;
+import com.xeiam.xchange.service.streaming.JsonWrappedExchangeEvent;
 import com.xeiam.xchange.service.streaming.ReconnectService;
 import com.xeiam.xchange.service.streaming.StreamingExchangeService;
 
@@ -89,10 +93,9 @@ public class BitstampPusherService extends BitstampBaseService implements Stream
   }
 
   @Override
-  public void connect() {
-
+  public synchronized void connect() {
     // Re-connect is handled by the base ReconnectService when it reads a closed conn. state
-    client.connect();
+    client.connect(this.connectionEventListener(), ConnectionState.ALL);
     channels.clear();
     for (String name : configuration.getChannels()) {
       Channel instance = client.subscribe(name);
@@ -110,10 +113,22 @@ public class BitstampPusherService extends BitstampBaseService implements Stream
   }
 
   @Override
-  public void disconnect() {
+  public synchronized void disconnect() {
 
     client.disconnect();
     channels.clear();
+  }
+  
+  @Override
+  public synchronized void start() {
+    connect();
+    reconnectService.start();
+  }
+  
+  @Override
+  public synchronized void stop() {
+    reconnectService.stop();
+    disconnect();    
   }
 
   /**
@@ -199,12 +214,41 @@ public class BitstampPusherService extends BitstampBaseService implements Stream
   }
 
   private void addToEventQueue(ExchangeEvent event) {
-
+    try {
+      reconnectService.intercept(event);
+    } catch (Exception e) {
+      log.debug("reconnectService intercept() exception", e);
+    }
     try {
       consumerEventQueue.put(event);
     } catch (InterruptedException e) {
       log.debug("Event queue interrupted", e);
     }
+  }
+  
+  private ConnectionEventListener connectionEventListener() {
+    return new ConnectionEventListener() {
+      @Override
+      public void onConnectionStateChange(ConnectionStateChange change) {
+        switch(change.getCurrentState()) {
+        case CONNECTED:
+          log.debug("Connected to Pusher service.");
+          addToEventQueue(new JsonWrappedExchangeEvent(ExchangeEventType.CONNECT, "connected"));
+          break;
+  
+        case DISCONNECTED:
+          log.debug("Disconnected from Pusher service.");
+          addToEventQueue(new JsonWrappedExchangeEvent(ExchangeEventType.DISCONNECT, "disconnected"));
+          break;
+        }
+      }
+
+      @Override
+      public void onError(String message, String code, Exception e) {
+        log.debug("Connection error: " + message);
+        addToEventQueue(new JsonWrappedExchangeEvent(ExchangeEventType.ERROR, message));
+      }
+    };
   }
 
 }

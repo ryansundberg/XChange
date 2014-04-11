@@ -27,6 +27,7 @@ import java.util.TimerTask;
 import org.java_websocket.WebSocket.READYSTATE;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author alexnugent
@@ -40,9 +41,11 @@ public class ReconnectService {
   private final StreamingExchangeService streamingExchangeService;
 
   private int numConnectionAttempts = 0;
+  
+  protected AtomicBoolean running;
 
   Timer timer = new Timer();
-  TimerTask reconnectTask = new ReconnectTask();
+  TimerTask reconnectTask;
 
   /**
    * Constructor
@@ -53,30 +56,41 @@ public class ReconnectService {
 
     this.streamingExchangeService = streamingExchangeService;
     this.exchangeStreamingConfiguration = exchangeStreamingConfiguration;
+    this.running = new AtomicBoolean(true);
+  }
+  
+  public synchronized void start() {
+    reconnectTask = new ReconnectTask();
+    timer.schedule(reconnectTask, exchangeStreamingConfiguration.getTimeoutInMs());
+  }
+  
+  /** Stop the re-connect service (stop trying to reconnect.) */
+  public synchronized void stop() {    
+    this.running.set(false);
+    if (reconnectTask != null) {
+      reconnectTask.cancel();
+    }
   }
 
   public void intercept(ExchangeEvent exchangeEvent) {
-
     reconnectTask.cancel();
-    reconnectTask = new ReconnectTask();
-    timer.schedule(reconnectTask, exchangeStreamingConfiguration.getTimeoutInMs());
-
-    if (exchangeEvent.getEventType() == ExchangeEventType.ERROR || exchangeEvent.getEventType() == ExchangeEventType.DISCONNECT) {
-      try {
-        Thread.sleep(exchangeStreamingConfiguration.getReconnectWaitTimeInMs());
-      } catch (InterruptedException e) {
-        e.printStackTrace();
+    if (running.get()) {
+      start(); // reschedule a check
+      if (exchangeEvent.getEventType() == ExchangeEventType.ERROR || exchangeEvent.getEventType() == ExchangeEventType.DISCONNECT) {
+        try {
+          Thread.sleep(exchangeStreamingConfiguration.getReconnectWaitTimeInMs());
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+        reconnect();
       }
-      reconnect();
+      else if (exchangeEvent.getEventType() == ExchangeEventType.CONNECT) {
+        numConnectionAttempts = 0;
+      }
     }
-    else if (exchangeEvent.getEventType() == ExchangeEventType.CONNECT) {
-      numConnectionAttempts = 0;
-    }
-
   }
 
-  private void reconnect() {
-
+  private synchronized void reconnect() {
     if (!streamingExchangeService.getWebSocketStatus().equals(READYSTATE.OPEN)) {
       log.debug("ExchangeType Error. Attempting reconnect " + numConnectionAttempts + " of " + exchangeStreamingConfiguration.getMaxReconnectAttempts());
 
@@ -96,15 +110,16 @@ public class ReconnectService {
 
     @Override
     public void run() {
-
-      // log.debug("ReconnectTask called; result: " + (streamingExchangeService.getWebSocketStatus().equals(READYSTATE.OPEN) ? "Connection still alive" : "Connection dead - reconnecting"));
-      if (!streamingExchangeService.getWebSocketStatus().equals(READYSTATE.OPEN)) {
-        log.debug("Time out!");
+      if(running.get()) {
+        // log.debug("ReconnectTask called; result: " + (streamingExchangeService.getWebSocketStatus().equals(READYSTATE.OPEN) ? "Connection still alive" : "Connection dead - reconnecting"));
+        if (!streamingExchangeService.getWebSocketStatus().equals(READYSTATE.OPEN)) {
+          log.debug("Websocket timed out!");
+          timer.purge();
+          reconnect();
+        }
         timer.purge();
-        reconnect();
+        start(); // reschedule a new task
       }
-      timer.purge();
-      timer.schedule(new ReconnectTask(), exchangeStreamingConfiguration.getTimeoutInMs());
     }
   }
 

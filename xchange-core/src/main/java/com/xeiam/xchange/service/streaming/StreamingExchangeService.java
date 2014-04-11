@@ -46,6 +46,20 @@ public interface StreamingExchangeService {
    * </p>
    */
   void disconnect();
+  
+  /**
+   * <p>
+   * Connects and starts the reconnect service.
+   * </p>
+   */
+  void start();
+  
+  /**
+   * <p>
+   * Disconnects and stops the reconnect service.
+   * </p>
+   */
+  void stop();
 
   /**
    * <p>
