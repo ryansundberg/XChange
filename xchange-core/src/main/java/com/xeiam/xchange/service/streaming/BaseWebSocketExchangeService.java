@@ -23,10 +23,12 @@ package com.xeiam.xchange.service.streaming;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -66,23 +68,24 @@ public abstract class BaseWebSocketExchangeService extends BaseExchangeService i
    * The exchange event producer
    */
   private WebSocketEventProducer exchangeEventProducer;
+  protected ExchangeEventListener exchangeEventListener;
 
   /**
    * Constructor
    * 
    * @param exchangeSpecification The {@link ExchangeSpecification}
    */
-  public BaseWebSocketExchangeService(ExchangeSpecification exchangeSpecification, ExchangeStreamingConfiguration exchangeStreamingConfiguration) {
+  protected BaseWebSocketExchangeService(ExchangeSpecification exchangeSpecification, ExchangeStreamingConfiguration exchangeStreamingConfiguration) {
 
     super(exchangeSpecification);
     this.exchangeStreamingConfiguration = exchangeStreamingConfiguration;
-    reconnectService = new ReconnectService(this, exchangeStreamingConfiguration); // re-connect enabled by default
+    reconnectService = new ReconnectService(this, exchangeStreamingConfiguration, reconnectErrorCallback()); // re-connect enabled by default
   }
 
-  protected void internalConnect(URI uri, ExchangeEventListener exchangeEventListener, Map<String, String> headers) {
+  protected void internalConnect(URI uri, Map<String, String> headers) {
     log.debug("internalConnect to {}", uri);
     // Validate inputs
-    Assert.notNull(exchangeEventListener, "runnableExchangeEventListener cannot be null");
+    Assert.notNull(exchangeEventListener, "exchangeEventListener cannot be null");
     
     synchronized (consumerEventQueue) { // sync on this object for connection state, since it is always present
       try {
@@ -117,14 +120,12 @@ public abstract class BaseWebSocketExchangeService extends BaseExchangeService i
   
   @Override
   public void start() {
-    connect();
     reconnectService.start();
   }
   
   @Override
   public void stop() {
     reconnectService.stop();
-    disconnect();
   }
 
   @Override
@@ -154,6 +155,18 @@ public abstract class BaseWebSocketExchangeService extends BaseExchangeService i
         return exchangeEventProducer.getConnection().getReadyState();
       }
     }
+  }
+  
+  private Callable<Void> reconnectErrorCallback() {
+    return new Callable<Void>() {
+      public Void call() {
+        Map<String, String> json = new HashMap<String, String>(2);
+        json.put("message", "Websocket service aborted."); // failed to re-connect after n attempts
+        json.put("type", "abort");
+        exchangeEventListener.handleEvent(new JsonWrappedExchangeEvent(ExchangeEventType.ERROR, json));
+        return null;
+      }
+    };
   }
 
   class KeepAliveTask extends TimerTask {

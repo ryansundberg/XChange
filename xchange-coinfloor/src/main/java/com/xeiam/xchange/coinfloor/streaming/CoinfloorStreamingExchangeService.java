@@ -58,7 +58,6 @@ public class CoinfloorStreamingExchangeService extends BaseWebSocketExchangeServ
   private final Logger logger = LoggerFactory.getLogger(CoinfloorStreamingExchangeService.class);
 
   private final CoinfloorStreamingConfiguration configuration;
-  private final CoinfloorEventListener exchangeEventListener;
   private final BlockingQueue<ExchangeEvent> systemEventQueue = new LinkedBlockingQueue<ExchangeEvent>();
   private final BlockingQueue<CoinfloorExchangeEvent> updateEventQueue = new LinkedBlockingQueue<CoinfloorExchangeEvent>();
 
@@ -74,7 +73,6 @@ public class CoinfloorStreamingExchangeService extends BaseWebSocketExchangeServ
 
     this.configuration = exchangeStreamingConfiguration;
     this.exchangeEventListener = new CoinfloorEventListener(consumerEventQueue, systemEventQueue);
-
     this.jsonObjectMapper = new ObjectMapper();
 
   }
@@ -98,7 +96,7 @@ public class CoinfloorStreamingExchangeService extends BaseWebSocketExchangeServ
     logger.debug("Streaming URI='{}'", uri);
 
     // Use the default internal connect
-    internalConnect(uri, exchangeEventListener, headers);
+    internalConnect(uri, headers);
 
     try {
       if (getNextSystemEvent().getEventType() != ExchangeEventType.WELCOME) {
@@ -126,7 +124,8 @@ public class CoinfloorStreamingExchangeService extends BaseWebSocketExchangeServ
 
     RequestFactory.CoinfloorAuthenticationRequest authVars =
         new RequestFactory.CoinfloorAuthenticationRequest(Long.valueOf(exchangeSpecification.getUserName()), (String) exchangeSpecification.getExchangeSpecificParametersItem("cookie"),
-            exchangeSpecification.getPassword(), (String) exchangeEventListener.getServerNonce());
+            exchangeSpecification.getPassword(), 
+            (String) ((CoinfloorEventListener)exchangeEventListener).getServerNonce());
 
     doNewRequest(authVars, ExchangeEventType.AUTHENTICATION);
 
@@ -286,7 +285,7 @@ public class CoinfloorStreamingExchangeService extends BaseWebSocketExchangeServ
    */
   public AccountInfo getCachedAccountInfo() {
 
-    return exchangeEventListener.getAdapterInstance().getCachedAccountInfo();
+    return ((CoinfloorEventListener)exchangeEventListener).getAdapterInstance().getCachedAccountInfo();
   }
 
   /**
@@ -298,7 +297,7 @@ public class CoinfloorStreamingExchangeService extends BaseWebSocketExchangeServ
    */
   public OrderBook getCachedOrderBook() {
 
-    return exchangeEventListener.getAdapterInstance().getCachedOrderBook();
+    return ((CoinfloorEventListener)exchangeEventListener).getAdapterInstance().getCachedOrderBook();
   }
 
   /**
@@ -310,7 +309,7 @@ public class CoinfloorStreamingExchangeService extends BaseWebSocketExchangeServ
    */
   public Trades getCachedTrades() {
 
-    return exchangeEventListener.getAdapterInstance().getCachedTrades();
+    return ((CoinfloorEventListener)exchangeEventListener).getAdapterInstance().getCachedTrades();
   }
 
   /**
@@ -322,7 +321,7 @@ public class CoinfloorStreamingExchangeService extends BaseWebSocketExchangeServ
    */
   public Ticker getCachedTicker() {
 
-    return exchangeEventListener.getAdapterInstance().getCachedTicker();
+    return ((CoinfloorEventListener)exchangeEventListener).getAdapterInstance().getCachedTicker();
   }
 
   @Override

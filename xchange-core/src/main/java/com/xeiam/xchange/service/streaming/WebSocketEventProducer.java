@@ -75,7 +75,7 @@ public class WebSocketEventProducer extends WebSocketClient {
     ExchangeEvent exchangeEvent = new JsonWrappedExchangeEvent(ExchangeEventType.CONNECT, "connected");
 
     if (reconnectService != null) { // logic here to intercept errors and reconnect..
-      reconnectService.intercept(exchangeEvent);
+      reconnectService.trigger(exchangeEvent);
     }
 
     exchangeEventListener.handleEvent(exchangeEvent);
@@ -90,10 +90,6 @@ public class WebSocketEventProducer extends WebSocketClient {
 
     logger.debug(message);
     ExchangeEvent exchangeEvent = new DefaultExchangeEvent(ExchangeEventType.MESSAGE, message);
-
-    if (reconnectService != null) { // logic here to intercept errors and reconnect..
-      reconnectService.intercept(exchangeEvent);
-    }
 
     exchangeEventListener.handleEvent(exchangeEvent);
   }
@@ -135,7 +131,7 @@ public class WebSocketEventProducer extends WebSocketClient {
     ExchangeEvent exchangeEvent = new JsonWrappedExchangeEvent(ExchangeEventType.DISCONNECT, "disconnected");
 
     if (reconnectService != null) { // logic here to intercept errors and reconnect..
-      reconnectService.intercept(exchangeEvent);
+      reconnectService.trigger(exchangeEvent);
     }
 
     exchangeEventListener.handleEvent(exchangeEvent);
@@ -144,14 +140,14 @@ public class WebSocketEventProducer extends WebSocketClient {
   @Override
   public void onError(Exception ex) {
 
-    ex.printStackTrace();
+    ex.printStackTrace(System.err);
     // if the error is fatal then onClose will be called additionally
 
     logger.error("onError: {}", ex.getMessage());
     ExchangeEvent exchangeEvent = new JsonWrappedExchangeEvent(ExchangeEventType.ERROR, ex.getMessage());
 
     if (reconnectService != null) { // logic here to intercept errors and reconnect..
-      reconnectService.intercept(exchangeEvent);
+      reconnectService.trigger(exchangeEvent);
     }
 
     exchangeEventListener.handleEvent(exchangeEvent);

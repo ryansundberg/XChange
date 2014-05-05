@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.print.DocFlavor.STRING;
@@ -42,7 +43,6 @@ import com.pusher.client.connection.ConnectionEventListener;
 import com.pusher.client.connection.ConnectionStateChange;
 import com.pusher.client.connection.ConnectionState;
 import com.xeiam.xchange.ExchangeSpecification;
-import com.xeiam.xchange.utils.Callback;
 import com.xeiam.xchange.bitstamp.BitstampAdapters;
 import com.xeiam.xchange.bitstamp.dto.marketdata.BitstampStreamingOrderBook;
 import com.xeiam.xchange.bitstamp.service.BitstampBaseService;
@@ -117,21 +117,18 @@ public class BitstampPusherService extends BitstampBaseService implements Stream
 
   @Override
   public synchronized void disconnect() {
-
     client.disconnect();
     channels.clear();
   }
   
   @Override
   public synchronized void start() {
-    connect();
     reconnectService.start();
   }
   
   @Override
   public synchronized void stop() {
     reconnectService.stop();
-    disconnect();    
   }
 
   /**
@@ -217,11 +214,7 @@ public class BitstampPusherService extends BitstampBaseService implements Stream
   }
 
   private void addToEventQueue(ExchangeEvent event) {
-    try {
-      reconnectService.intercept(event);
-    } catch (Exception e) {
-      log.debug("reconnectService intercept() exception", e);
-    }
+    reconnectService.trigger(event);
     try {
       consumerEventQueue.put(event);
     } catch (InterruptedException e) {
@@ -254,14 +247,14 @@ public class BitstampPusherService extends BitstampBaseService implements Stream
     };
   }
   
-  private Callback reconnectErrorCallback() {
-    return new Callback() {
-      @Override
-      public void execute() {
+  private Callable reconnectErrorCallback() {
+    return new Callable<Void>() {
+      public Void call() {
         Map<String, String> json = new HashMap<String, String>(2);
-        json.put("message", "Reconnect service aborted.");
+        json.put("message", "Websocket service aborted."); // failed to re-connect after n attempts
         json.put("type", "abort");
         addToEventQueue(new JsonWrappedExchangeEvent(ExchangeEventType.ERROR, json));
+        return null;
       }
     };
   }

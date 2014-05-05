@@ -36,6 +36,7 @@ public interface StreamingExchangeService {
   /**
    * <p>
    * Opens the connection to the upstream server for this instance.
+   * Use start() if you want automatic re-connect.
    * </p>
    */
   void connect();
