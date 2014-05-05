@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import javax.print.DocFlavor.STRING;
+
 import org.java_websocket.WebSocket.READYSTATE;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +42,7 @@ import com.pusher.client.connection.ConnectionEventListener;
 import com.pusher.client.connection.ConnectionStateChange;
 import com.pusher.client.connection.ConnectionState;
 import com.xeiam.xchange.ExchangeSpecification;
+import com.xeiam.xchange.utils.Callback;
 import com.xeiam.xchange.bitstamp.BitstampAdapters;
 import com.xeiam.xchange.bitstamp.dto.marketdata.BitstampStreamingOrderBook;
 import com.xeiam.xchange.bitstamp.service.BitstampBaseService;
@@ -85,7 +88,7 @@ public class BitstampPusherService extends BitstampBaseService implements Stream
 
     this.configuration = configuration;
     this.client = new Pusher(configuration.getPusherKey(), configuration.pusherOptions());
-    this.reconnectService = new ReconnectService(this, configuration);
+    this.reconnectService = new ReconnectService(this, configuration, reconnectErrorCallback());
     this.channels = new HashMap<String, Channel>();
 
     streamObjectMapper = new ObjectMapper();
@@ -247,6 +250,18 @@ public class BitstampPusherService extends BitstampBaseService implements Stream
       public void onError(String message, String code, Exception e) {
         log.debug("Connection error: " + message);
         addToEventQueue(new JsonWrappedExchangeEvent(ExchangeEventType.ERROR, message));
+      }
+    };
+  }
+  
+  private Callback reconnectErrorCallback() {
+    return new Callback() {
+      @Override
+      public void execute() {
+        Map<String, String> json = new HashMap<String, String>(2);
+        json.put("message", "Reconnect service aborted.");
+        json.put("type", "abort");
+        addToEventQueue(new JsonWrappedExchangeEvent(ExchangeEventType.ERROR, json));
       }
     };
   }

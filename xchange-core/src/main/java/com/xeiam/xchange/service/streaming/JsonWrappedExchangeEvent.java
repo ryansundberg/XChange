@@ -21,6 +21,11 @@
  */
 package com.xeiam.xchange.service.streaming;
 
+import java.util.Map;
+import java.util.HashMap;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 /**
  * <p>
  * Exchange event that provides convenience constructors for JSON wrapping
@@ -30,11 +35,32 @@ public class JsonWrappedExchangeEvent extends DefaultExchangeEvent {
 
   /**
    * @param exchangeEventType The exchange event type
+   * @param json Event data to become JSON
+   */
+  public JsonWrappedExchangeEvent(ExchangeEventType exchangeEventType, Object json) {
+    super(exchangeEventType);
+    data = buildJSON(payload);
+    payload = json;
+  }
+  
+  /**
+   * @param exchangeEventType The exchange event type
    * @param message The message content without JSON wrapping (will get a {"message":"parameter value"} wrapping)
    */
   public JsonWrappedExchangeEvent(ExchangeEventType exchangeEventType, String message) {
-
-    super(exchangeEventType, ("{\"message\":\"" + message + "\"}"));
+    super(exchangeEventType);
+    HashMap<String, String> json = new HashMap<String, String>(1);
+    json.put("message", message);
+    data = buildJSON(payload);
+    payload = json;
+  }  
+  
+  private static String buildJSON(Object obj) {
+    try {
+      return (new ObjectMapper()).writeValueAsString(obj);
+    } catch (JsonProcessingException err) {
+      return "undefined";
+    }
   }
 
 }

@@ -30,10 +30,15 @@ public class DefaultExchangeEvent implements ExchangeEvent {
 
   // Mandatory fields
   protected final ExchangeEventType exchangeEventType;
-  protected final String data;
+  protected String data;
 
   // Optional fields
   protected Object payload = null;
+  
+  protected DefaultExchangeEvent(ExchangeEventType exchangeEventType) {
+    this.exchangeEventType = exchangeEventType;
+    this.data = "undefined";
+  }
 
   /**
    * @param exchangeEventType The exchange event type
@@ -41,7 +46,7 @@ public class DefaultExchangeEvent implements ExchangeEvent {
    */
   public DefaultExchangeEvent(ExchangeEventType exchangeEventType, String data) {
 
-    this.exchangeEventType = exchangeEventType;
+    this(exchangeEventType);
     this.data = data;
   }
 
