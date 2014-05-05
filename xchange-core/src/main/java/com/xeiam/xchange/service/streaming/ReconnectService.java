@@ -79,10 +79,10 @@ public class ReconnectService {
         go.set(true);
         eventQueue.clear();
         try {
-          eventQueue.put(null);
+          eventQueue.put(new DefaultExchangeEvent(ExchangeEventType.EVENT));
         } catch (InterruptedException e) {
           e.printStackTrace(System.err);
-          log.error("Reconnect service start interrupted: {0}", e.getMessage());
+          log.error("Reconnect service start interrupted: {}", e.getMessage());
         }
         thread = new Thread(new ReconnectThread());
         thread.start();
@@ -95,12 +95,13 @@ public class ReconnectService {
     synchronized (streamingExchangeService) {
       if (thread != null) {
         go.set(false);
+        streamingExchangeService.disconnect();
         try {
-          eventQueue.put(null);
+          eventQueue.put(new DefaultExchangeEvent(ExchangeEventType.EVENT));
           thread.join();
         } catch (InterruptedException e) {
           e.printStackTrace(System.err);
-          log.error("Reconnect service stop interrupted: {0}", e.getMessage());
+          log.error("Reconnect service stop interrupted: {}", e.getMessage());
         }
         thread = null;
       }
@@ -113,7 +114,7 @@ public class ReconnectService {
     }
     catch (InterruptedException e) {
       e.printStackTrace(System.err);
-      log.error("Reconnect service trigger interrupted: {0}", e.getMessage());
+      log.error("Reconnect service trigger interrupted: {}", e.getMessage());
     }
   }
   
@@ -127,23 +128,21 @@ public class ReconnectService {
       while (go.get()) {
         try {
           ExchangeEvent evt = eventQueue.take();
-          if (evt == null) {
+          switch(evt.getEventType()) {
+          case CONNECT:
+            attempt = 0;
+            break;
+          case DISCONNECT:
+          case ERROR:
+          case EVENT:
             checkConnection();
-          }
-          else {
-            switch(evt.getEventType()) {
-            case CONNECT:
-              attempt = 0;
-              break;
-            case DISCONNECT:
-            case ERROR:
-              checkConnection();
-              break;
-            }
-          }
+            break;
+          default:
+            break;
+          }        
         } catch (InterruptedException e) {
           e.printStackTrace(System.err);
-          log.debug("Reconnect service interrupted: {0}", e.getMessage());
+          log.debug("Reconnect service interrupted: {}", e.getMessage());
         }
       }
       
@@ -155,45 +154,49 @@ public class ReconnectService {
             errorCallback.call();
           } catch (Exception e) {
             e.printStackTrace(System.err);
-            log.error("Reconnect error callback exception: {0}", e.getMessage());
+            log.error("Reconnect error callback exception: {}", e.getMessage());
           }
         }        
       }      
     }
     
     private void checkConnection() {
-      try {
-      switch(streamingExchangeService.getWebSocketStatus()) {
-      case NOT_YET_CONNECTED:
-      case CLOSED:
-        if(attempt < exchangeStreamingConfiguration.getMaxReconnectAttempts()) {
-          if(attempt++ > 0) {
-            Thread.sleep(exchangeStreamingConfiguration.getReconnectWaitTimeInMs());
-          }
-          log.debug("Attempting to connect {0} of {1}.", attempt, exchangeStreamingConfiguration.getMaxReconnectAttempts());
-          try {
-            streamingExchangeService.connect();
-          }
-          catch (Exception e) {
-            log.debug("Connection attempt {0} failed: {1}", attempt, e.getMessage());
-          }
-          eventQueue.put(null);
-        }
-        else {
-          go.set(false);
-        }
-        break;
-        
-      case CONNECTING:
-      case CLOSING:
-        // check again in 10 ms
-        Thread.sleep(10);
-        eventQueue.put(null);
-        break;
+      if(!go.get()) {
+        return;
       }
+      try {
+        switch(streamingExchangeService.getWebSocketStatus()) {
+        case NOT_YET_CONNECTED:
+        case CLOSED:
+          if(attempt < exchangeStreamingConfiguration.getMaxReconnectAttempts()) {
+            if(attempt++ > 0) {
+              streamingExchangeService.disconnect();
+              Thread.sleep(exchangeStreamingConfiguration.getReconnectWaitTimeInMs());
+            }
+            log.debug("Attempting to connect {} of {}.", attempt, exchangeStreamingConfiguration.getMaxReconnectAttempts());
+            try {
+              streamingExchangeService.connect();
+            }
+            catch (Exception e) {
+              log.debug("Connection attempt {} failed: {}", attempt, e.getMessage());
+            }
+            eventQueue.put(new DefaultExchangeEvent(ExchangeEventType.EVENT));
+          }
+          else {
+            go.set(false);
+          }
+          break;
+          
+        case CONNECTING:
+        case CLOSING:
+          // check again in 10 ms
+          Thread.sleep(10);
+          eventQueue.put(new DefaultExchangeEvent(ExchangeEventType.EVENT));
+          break;
+        }
       } catch (InterruptedException e) {
         e.printStackTrace(System.err);
-        log.error("checkConnection interrupted: {0}", e.getMessage());
+        log.error("checkConnection interrupted: {}", e.getMessage());
       }
     }
     

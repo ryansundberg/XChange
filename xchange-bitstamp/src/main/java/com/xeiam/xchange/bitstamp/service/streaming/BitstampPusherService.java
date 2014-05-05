@@ -97,7 +97,7 @@ public class BitstampPusherService extends BitstampBaseService implements Stream
 
   @Override
   public synchronized void connect() {
-    // Re-connect is handled by the base ReconnectService when it reads a closed conn. state
+    client = new Pusher(configuration.getPusherKey(), configuration.pusherOptions());
     client.connect(this.connectionEventListener(), ConnectionState.ALL);
     channels.clear();
     for (String name : configuration.getChannels()) {
