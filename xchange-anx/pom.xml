@@ -2,7 +2,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>com.xeiam.xchange</groupId>
+		<groupId>com.hftc.xchange</groupId>
 		<artifactId>xchange-parent</artifactId>
 		<version>2.0.1-SNAPSHOT</version>
 	</parent>
@@ -25,7 +25,7 @@
 
 		<!-- Project dependencies (version automatically set through parent) -->
 		<dependency>
-			<groupId>com.xeiam.xchange</groupId>
+			<groupId>com.hftc.xchange</groupId>
 			<artifactId>xchange-core</artifactId>
 			<version>2.0.1-SNAPSHOT</version>
 		</dependency>

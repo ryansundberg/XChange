@@ -5,7 +5,7 @@
 
     <parent>
         <artifactId>xchange-parent</artifactId>
-        <groupId>com.xeiam.xchange</groupId>
+        <groupId>com.hftc.xchange</groupId>
         <version>2.0.1-SNAPSHOT</version>
     </parent>
 
@@ -25,7 +25,7 @@
     <dependencies>
 
         <dependency>
-            <groupId>com.xeiam.xchange</groupId>
+            <groupId>com.hftc.xchange</groupId>
             <artifactId>xchange-core</artifactId>
             <version>2.0.1-SNAPSHOT</version>
         </dependency>
