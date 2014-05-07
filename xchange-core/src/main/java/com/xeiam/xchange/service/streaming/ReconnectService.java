@@ -79,7 +79,7 @@ public class ReconnectService {
         go.set(true);
         eventQueue.clear();
         try {
-          eventQueue.put(new DefaultExchangeEvent(ExchangeEventType.EVENT));
+          eventQueue.put(new DefaultExchangeEvent(ExchangeEventType.DISCONNECT)); // kickstart
         } catch (InterruptedException e) {
           e.printStackTrace(System.err);
           log.error("Reconnect service start interrupted: {}", e.getMessage());
@@ -97,7 +97,7 @@ public class ReconnectService {
         go.set(false);
         streamingExchangeService.disconnect();
         try {
-          eventQueue.put(new DefaultExchangeEvent(ExchangeEventType.EVENT));
+          eventQueue.put(new DefaultExchangeEvent(ExchangeEventType.EVENT)); // unblock the Q
           thread.join();
         } catch (InterruptedException e) {
           e.printStackTrace(System.err);
@@ -134,7 +134,7 @@ public class ReconnectService {
             break;
           case DISCONNECT:
           case ERROR:
-          case EVENT:
+          //case EVENT:
             checkConnection();
             break;
           default:
@@ -180,19 +180,19 @@ public class ReconnectService {
             catch (Exception e) {
               log.debug("Connection attempt {} failed: {}", attempt, e.getMessage());
             }
-            eventQueue.put(new DefaultExchangeEvent(ExchangeEventType.EVENT));
+            // eventQueue.put(new DefaultExchangeEvent(ExchangeEventType.EVENT));
           }
           else {
             go.set(false);
           }
           break;
           
-        case CONNECTING:
+        /*case CONNECTING:
         case CLOSING:
           // check again in 10 ms
           Thread.sleep(10);
           eventQueue.put(new DefaultExchangeEvent(ExchangeEventType.EVENT));
-          break;
+          break;*/
         }
       } catch (InterruptedException e) {
         e.printStackTrace(System.err);
