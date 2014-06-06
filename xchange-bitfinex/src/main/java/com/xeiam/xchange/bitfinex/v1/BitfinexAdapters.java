@@ -23,6 +23,7 @@ package com.xeiam.xchange.bitfinex.v1;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -49,9 +50,27 @@ import com.xeiam.xchange.dto.trade.Wallet;
 import com.xeiam.xchange.utils.DateUtils;
 
 public final class BitfinexAdapters {
+
   public static final Logger log = LoggerFactory.getLogger(BitfinexAdapters.class);
 
   private BitfinexAdapters() {
+
+  }
+
+  public static List<CurrencyPair> adaptCurrencyPairs(Collection<String> bitfinexSymbol) {
+
+    List<CurrencyPair> currencyPairs = new ArrayList<CurrencyPair>();
+    for (String symbol : bitfinexSymbol) {
+      currencyPairs.add(adaptCurrencyPair(symbol));
+    }
+    return currencyPairs;
+  }
+
+  public static CurrencyPair adaptCurrencyPair(String bitfinexSymbol) {
+
+    String tradableIdentifier = bitfinexSymbol.substring(0, 3).toUpperCase();
+    String transactionCurrency = bitfinexSymbol.substring(3).toUpperCase();
+    return new CurrencyPair(tradableIdentifier, transactionCurrency);
   }
 
   public static List<LimitOrder> adaptOrders(BitfinexLevel[] orders, CurrencyPair currencyPair, String orderType, String id) {
@@ -102,12 +121,13 @@ public final class BitfinexAdapters {
     BigDecimal last = bitfinexTicker.getLast_price();
     BigDecimal bid = bitfinexTicker.getBid();
     BigDecimal ask = bitfinexTicker.getAsk();
-    BigDecimal high = bitfinexTicker.getAsk();
-    BigDecimal low = bitfinexTicker.getBid();
+    BigDecimal high = bitfinexTicker.getHigh();
+    BigDecimal low = bitfinexTicker.getLow();
+    BigDecimal volume = bitfinexTicker.getVolume();
 
     Date timestamp = DateUtils.fromMillisUtc((long) (bitfinexTicker.getTimestamp() * 1000L));
 
-    return TickerBuilder.newInstance().withCurrencyPair(currencyPair).withLast(last).withBid(bid).withAsk(ask).withHigh(high).withLow(low).withTimestamp(timestamp).build();
+    return TickerBuilder.newInstance().withCurrencyPair(currencyPair).withLast(last).withBid(bid).withAsk(ask).withHigh(high).withLow(low).withVolume(volume).withTimestamp(timestamp).build();
   }
 
   public static AccountInfo adaptAccountInfo(BitfinexBalancesResponse[] response) {
@@ -127,10 +147,7 @@ public final class BitfinexAdapters {
 
     for (BitfinexOrderStatusResponse order : activeOrders) {
       OrderType orderType = order.getSide().equalsIgnoreCase("buy") ? OrderType.BID : OrderType.ASK;
-      String tradableIdentifier = order.getSymbol().substring(0, 3).toUpperCase();
-      String transactionCurrency = order.getSymbol().substring(3).toUpperCase();
-      CurrencyPair currencyPair = new CurrencyPair(tradableIdentifier, transactionCurrency);
-
+      CurrencyPair currencyPair = adaptCurrencyPair(order.getSymbol());
       limitOrders.add(new LimitOrder(orderType, order.getRemainingAmount(), currencyPair, String.valueOf(order.getId()), new Date((long) order.getTimestamp()), order.getPrice()));
     }
 
@@ -140,15 +157,12 @@ public final class BitfinexAdapters {
   public static Trades adaptTradeHistory(BitfinexTradeResponse[] trades, String symbol) {
 
     List<Trade> pastTrades = new ArrayList<Trade>(trades.length);
-
-    String tradableIdentifier = symbol.substring(0, 3).toUpperCase();
-    String transactionCurrency = symbol.substring(3).toUpperCase();
+    CurrencyPair currencyPair = adaptCurrencyPair(symbol);
 
     for (BitfinexTradeResponse trade : trades) {
       OrderType orderType = trade.getType().equalsIgnoreCase("buy") ? OrderType.BID : OrderType.ASK;
 
       String id = String.valueOf(trade.hashCode());
-      CurrencyPair currencyPair = new CurrencyPair(tradableIdentifier, transactionCurrency);
 
       pastTrades.add(new Trade(orderType, trade.getAmount(), currencyPair, trade.getPrice(), new Date((long) (trade.getTimestamp() * 1000L)), id));
     }
