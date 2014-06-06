@@ -22,6 +22,7 @@
 package com.xeiam.xchange.bitfinex.v1;
 
 import java.io.IOException;
+import java.util.Set;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -39,7 +40,7 @@ import com.xeiam.xchange.bitfinex.v1.dto.marketdata.BitfinexTrade;
 public interface Bitfinex {
 
   @GET
-  @Path("ticker/{symbol}")
+  @Path("pubticker/{symbol}")
   BitfinexTicker getTicker(@PathParam("symbol") String symbol) throws IOException;
 
   @GET
@@ -52,6 +53,6 @@ public interface Bitfinex {
 
   @GET
   @Path("symbols")
-  String[] getSymbols() throws IOException;
+  Set<String> getSymbols() throws IOException;
 
 }
