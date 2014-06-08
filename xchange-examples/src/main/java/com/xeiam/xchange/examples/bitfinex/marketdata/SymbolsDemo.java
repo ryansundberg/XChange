@@ -8,7 +8,6 @@ import com.xeiam.xchange.ExchangeFactory;
 import com.xeiam.xchange.bitfinex.v1.BitfinexExchange;
 import com.xeiam.xchange.bitfinex.v1.service.polling.BitfinexMarketDataServiceRaw;
 import com.xeiam.xchange.currency.CurrencyPair;
-import com.xeiam.xchange.dto.ExchangeInfo;
 import com.xeiam.xchange.service.polling.PollingMarketDataService;
 
 public class SymbolsDemo {
@@ -28,10 +27,6 @@ public class SymbolsDemo {
 
   private static void generic(PollingMarketDataService marketDataService) throws IOException {
 
-    // Get the latest ticker data showing BTC to USD
-    ExchangeInfo exchangeInfo = marketDataService.getExchangeInfo();
-
-    System.out.println(exchangeInfo.toString());
   }
 
   private static void raw(BitfinexMarketDataServiceRaw marketDataService) throws IOException {

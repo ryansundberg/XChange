@@ -19,39 +19,43 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xeiam.xchange.dto;
+package com.xeiam.xchange.hitbtc.service.polling;
 
-import java.util.List;
+import java.io.IOException;
+import java.math.BigDecimal;
 
-import com.xeiam.xchange.currency.CurrencyPair;
+import com.xeiam.xchange.ExchangeSpecification;
+import com.xeiam.xchange.NotYetImplementedForExchangeException;
+import com.xeiam.xchange.dto.account.AccountInfo;
+import com.xeiam.xchange.hitbtc.HitbtcAdapters;
+import com.xeiam.xchange.hitbtc.dto.account.HitbtcBalance;
+import com.xeiam.xchange.service.polling.PollingAccountService;
 
-/**
- * Author: brox
- * Returns public info about exchange, such as allowed currency pairs, fees etc.
- */
-public final class ExchangeInfo {
+public class HitbtcAccountService extends HitbtcAccountServiceRaw implements PollingAccountService {
 
-  private final List<CurrencyPair> pairs;
+  public HitbtcAccountService(ExchangeSpecification exchangeSpecification) {
 
-  /**
-   * Constructor
-   * 
-   * @param pairs
-   */
-  public ExchangeInfo(List<CurrencyPair> pairs) {
-
-    this.pairs = pairs;
-  }
-
-  public List<CurrencyPair> getPairs() {
-
-    return pairs;
+    super(exchangeSpecification);
   }
 
   @Override
-  public String toString() {
+  public AccountInfo getAccountInfo() throws IOException {
 
-    return "ExchangeInfo [pairs=" + pairs + "]";
+    HitbtcBalance[] accountInfoRaw = getAccountInfoRaw();
+
+    return HitbtcAdapters.adaptAccountInfo(accountInfoRaw);
+  }
+
+  @Override
+  public String withdrawFunds(String currency, BigDecimal amount, String address) throws IOException {
+
+    throw new NotYetImplementedForExchangeException();
+  }
+
+  @Override
+  public String requestDepositAddress(String currency, String... args) throws IOException {
+
+    throw new NotYetImplementedForExchangeException();
   }
 
 }

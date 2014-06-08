@@ -1,3 +1,5 @@
+package com.xeiam.xchange.hitbtc.service.polling;
+
 /**
  * Copyright (C) 2012 - 2014 Xeiam LLC http://xeiam.com
  *
@@ -19,45 +21,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xeiam.xchange.hitbtc.service;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 
 import com.xeiam.xchange.ExchangeException;
 import com.xeiam.xchange.ExchangeSpecification;
 import com.xeiam.xchange.NotAvailableFromExchangeException;
 import com.xeiam.xchange.NotYetImplementedForExchangeException;
-import com.xeiam.xchange.dto.account.AccountInfo;
-import com.xeiam.xchange.hitbtc.HitbtcAdapters;
+import com.xeiam.xchange.hitbtc.HitbtcAuthenticated;
 import com.xeiam.xchange.hitbtc.dto.account.HitbtcBalance;
-import com.xeiam.xchange.service.polling.PollingAccountService;
+import com.xeiam.xchange.hitbtc.dto.account.HitbtcBalanceResponse;
 
-public class HitbtcAccountService extends HitbtcAccountServiceRaw implements PollingAccountService {
+public class HitbtcAccountServiceRaw extends HitbtcBasePollingService<HitbtcAuthenticated> {
 
-  public HitbtcAccountService(ExchangeSpecification exchangeSpecification) {
+  public HitbtcAccountServiceRaw(ExchangeSpecification exchangeSpecification) {
 
-    super(exchangeSpecification);
+    super(HitbtcAuthenticated.class, exchangeSpecification);
   }
 
-  @Override
-  public AccountInfo getAccountInfo() throws ExchangeException, NotAvailableFromExchangeException, NotYetImplementedForExchangeException, IOException {
+  public HitbtcBalance[] getAccountInfoRaw() throws ExchangeException, NotAvailableFromExchangeException, NotYetImplementedForExchangeException, IOException {
 
-    HitbtcBalance[] accountInfoRaw = getAccountInfoRaw();
-
-    return HitbtcAdapters.adaptAccountInfo(accountInfoRaw);
+    HitbtcBalanceResponse hitbtcBalance = hitbtc.getHitbtcBalance(signatureCreator, nextNonce(), apiKey);
+    return hitbtcBalance.getBalances();
   }
-
-  @Override
-  public String withdrawFunds(String currency, BigDecimal amount, String address) throws ExchangeException, NotAvailableFromExchangeException, NotYetImplementedForExchangeException, IOException {
-
-    throw new NotYetImplementedForExchangeException();
-  }
-
-  @Override
-  public String requestDepositAddress(String currency, String... args) throws ExchangeException, NotAvailableFromExchangeException, NotYetImplementedForExchangeException, IOException {
-
-    throw new NotYetImplementedForExchangeException();
-  }
-
 }
