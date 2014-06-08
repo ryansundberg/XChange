@@ -21,24 +21,31 @@
  */
 package com.xeiam.xchange.hitbtc;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import com.xeiam.xchange.currency.CurrencyPair;
-import com.xeiam.xchange.dto.ExchangeInfo;
 import com.xeiam.xchange.dto.Order.OrderType;
 import com.xeiam.xchange.dto.account.AccountInfo;
-import com.xeiam.xchange.dto.marketdata.*;
+import com.xeiam.xchange.dto.marketdata.OrderBook;
+import com.xeiam.xchange.dto.marketdata.Ticker;
+import com.xeiam.xchange.dto.marketdata.Trade;
+import com.xeiam.xchange.dto.marketdata.Trades;
 import com.xeiam.xchange.dto.marketdata.Trades.TradeSortType;
 import com.xeiam.xchange.dto.trade.LimitOrder;
 import com.xeiam.xchange.dto.trade.OpenOrders;
 import com.xeiam.xchange.dto.trade.Wallet;
 import com.xeiam.xchange.hitbtc.dto.account.HitbtcBalance;
-import com.xeiam.xchange.hitbtc.dto.marketdata.*;
+import com.xeiam.xchange.hitbtc.dto.marketdata.HitbtcOrderBook;
+import com.xeiam.xchange.hitbtc.dto.marketdata.HitbtcSymbol;
+import com.xeiam.xchange.hitbtc.dto.marketdata.HitbtcSymbols;
+import com.xeiam.xchange.hitbtc.dto.marketdata.HitbtcTicker;
+import com.xeiam.xchange.hitbtc.dto.marketdata.HitbtcTrade;
+import com.xeiam.xchange.hitbtc.dto.marketdata.HitbtcTrades;
 import com.xeiam.xchange.hitbtc.dto.trade.HitbtcOrder;
 import com.xeiam.xchange.hitbtc.dto.trade.HitbtcOwnTrade;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 /**
  * @author kpysniak
@@ -52,11 +59,6 @@ public class HitbtcAdapters {
    */
   private HitbtcAdapters() {
 
-  }
-
-  public static ExchangeInfo adaptExchangeInfo(HitbtcSymbols hitbtcSymbols) {
-
-    return new ExchangeInfo(adaptCurrencyPairs(hitbtcSymbols));
   }
 
   public static List<CurrencyPair> adaptCurrencyPairs(HitbtcSymbols hitbtcSymbols) {
@@ -76,7 +78,7 @@ public class HitbtcAdapters {
 
   /**
    * Adapts a HitbtcTicker to a Ticker Object
-   *
+   * 
    * @param hitbtcTicker The exchange specific ticker
    * @param currencyPair (e.g. BTC/USD)
    * @return The ticker

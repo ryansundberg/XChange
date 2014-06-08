@@ -5,7 +5,6 @@ import java.util.Collection;
 
 import com.xeiam.xchange.Exchange;
 import com.xeiam.xchange.currency.CurrencyPair;
-import com.xeiam.xchange.dto.ExchangeInfo;
 import com.xeiam.xchange.dto.marketdata.OrderBook;
 import com.xeiam.xchange.dto.marketdata.Ticker;
 import com.xeiam.xchange.examples.hitbtc.HitbtcExampleUtils;
@@ -27,9 +26,6 @@ public class HitbtcMarketDataDemo {
 
   private static void generic(PollingMarketDataService marketDataService) throws IOException {
 
-    ExchangeInfo exchangeInfo = marketDataService.getExchangeInfo();
-    System.out.println(exchangeInfo);
-
     Ticker ticker = marketDataService.getTicker(CurrencyPair.BTC_USD);
     System.out.println(ticker);
 
@@ -41,10 +37,10 @@ public class HitbtcMarketDataDemo {
 
     Collection<CurrencyPair> currencyPairs = marketDataService.getExchangeSymbols();
     System.out.println(currencyPairs);
-    
+
     HitbtcTicker ticker = marketDataService.getHitbtcTicker(CurrencyPair.BTC_USD);
     System.out.println(ticker);
-    
+
     HitbtcOrderBook orderBook = marketDataService.getHitbtcOrderBook(CurrencyPair.BTC_USD);
     System.out.println(orderBook);
   }

@@ -68,8 +68,9 @@ public interface ANXV2 {
 
   @GET
   @Path("{ident}{currency}/money/ticker")
-  ANXTickersWrapper getTickers(@PathParam("ident") String tradeableIdentifier, @PathParam("currency") String currency, @QueryParam("extraCcyPairs") String extraCurrencyPairs) throws ANXException, IOException;
- 
+  ANXTickersWrapper getTickers(@PathParam("ident") String tradeableIdentifier, @PathParam("currency") String currency, @QueryParam("extraCcyPairs") String extraCurrencyPairs) throws ANXException,
+      IOException;
+
   @GET
   @Path("{ident}{currency}/money/depth/fetch")
   ANXDepthWrapper getPartialDepth(@PathParam("ident") String tradeableIdentifier, @PathParam("currency") String currency) throws ANXException, IOException;
@@ -80,14 +81,11 @@ public interface ANXV2 {
 
   @GET
   @Path("{ident}{currency}/money/depth/full")
-  ANXDepthsWrapper getFullDepths(@PathParam("ident") String tradeableIdentifier, @PathParam("currency") String currency, @QueryParam("extraCcyPairs") String extraCurrencyPairs) throws ANXException, IOException;
+  ANXDepthsWrapper getFullDepths(@PathParam("ident") String tradeableIdentifier, @PathParam("currency") String currency, @QueryParam("extraCcyPairs") String extraCurrencyPairs) throws ANXException,
+      IOException;
 
   @GET
-  @Path("{ident}{currency}/money/trades/fetch")
-  ANXTradesWrapper getTrades(@PathParam("ident") String tradeableIdentifier, @PathParam("currency") String currency) throws ANXException, IOException;
-
-  @GET
-  @Path("{ident}{currency}/money/trades/fetch")
+  @Path("{ident}{currency}/money/trade/fetch")
   ANXTradesWrapper getTrades(@PathParam("ident") String tradeableIdentifier, @PathParam("currency") String currency, @QueryParam("since") long since) throws ANXException, IOException;
 
   // Account Info API
