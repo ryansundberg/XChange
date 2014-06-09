@@ -1,6 +1,6 @@
 package com.xeiam.xchange.atlasats;
 
-import si.mazi.rescu.JacksonConfigureListener;
+import si.mazi.rescu.jackson.JacksonConfigureListener;
 
 import com.xeiam.xchange.Exchange;
 import com.xeiam.xchange.ExchangeSpecification;

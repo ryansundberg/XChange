@@ -3,7 +3,7 @@ package com.xeiam.xchange.atlasats;
 import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import si.mazi.rescu.JacksonConfigureListener;
+import si.mazi.rescu.jackson.JacksonConfigureListener;
 
 public class AtlasJacksonConfigureListener implements JacksonConfigureListener {
 
