@@ -13,6 +13,7 @@ import com.xeiam.xchange.ExchangeSpecification;
 import com.xeiam.xchange.service.polling.PollingAccountService;
 import com.xeiam.xchange.service.polling.PollingMarketDataService;
 import com.xeiam.xchange.service.polling.PollingTradeService;
+import com.xeiam.xchange.service.streaming.StreamingExchangeService;
 
 public class AtlasExchangeTest {
 	private static final Logger LOGGER = LoggerFactory
@@ -64,22 +65,27 @@ public class AtlasExchangeTest {
 	@Test
 	public void testApplySpecification() {
 		assertNotNull(defaultExchange);
+	    AtlasStreamingConfiguration streamingConfig = new AtlasStreamingConfiguration();
 		PollingAccountService accountService = defaultExchange
 				.getPollingAccountService();
 		PollingMarketDataService marketDataService = defaultExchange
 				.getPollingMarketDataService();
 		PollingTradeService tradeService = defaultExchange
 				.getPollingTradeService();
+		StreamingExchangeService streamingService = defaultExchange.getStreamingExchangeService(streamingConfig);
 		assertNull(accountService);
 		assertNull(marketDataService);
 		assertNull(tradeService);
+		assertNull(streamingService);
 		defaultExchange.applySpecification(exchangeSpecification);
 		accountService = defaultExchange.getPollingAccountService();
 		marketDataService = defaultExchange.getPollingMarketDataService();
 		tradeService = defaultExchange.getPollingTradeService();
+		streamingService = defaultExchange.getStreamingExchangeService(streamingConfig);
 		assertNotNull(accountService);
 		assertNotNull(marketDataService);
 		assertNotNull(tradeService);
+	    assertNotNull(streamingService);
 	}
 
 	@Test
@@ -89,39 +95,6 @@ public class AtlasExchangeTest {
 				.getExchangeSpecification();
 		assertNotNull(specification);
 		LOGGER.info(specification.toString());
-	}
-
-	@Test
-	public void testGetPollingMarketDataService() {
-		assertNotNull(testExchange);
-		PollingMarketDataService marketDataService = testExchange
-				.getPollingMarketDataService();
-		assertNotNull(marketDataService);
-		marketDataService = testExchange.getPollingMarketDataService();
-		assertNotNull(marketDataService);
-		LOGGER.info(marketDataService.toString());
-	}
-
-	@Test
-	public void testGetPollingTradeService() {
-		assertNotNull(testExchange);
-		PollingTradeService tradeService = testExchange
-				.getPollingTradeService();
-		assertNotNull(tradeService);
-	}
-
-	@Test
-	public void testGetPollingAccountService() {
-		assertNotNull(testExchange);
-		PollingAccountService pollingAccountService = testExchange
-				.getPollingAccountService();
-		assertNotNull(pollingAccountService);
-		LOGGER.info(pollingAccountService.toString());
-	}
-
-	@Test
-	public void testGetStreamingExchangeService() {
-		fail("Not yet implemented");
 	}
 
 }

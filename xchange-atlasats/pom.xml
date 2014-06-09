@@ -19,5 +19,20 @@
   		<artifactId>logback-classic</artifactId>
   		<scope>test</scope>
   	</dependency>
+  	<dependency>
+		<groupId>org.cometd.java</groupId>
+		<artifactId>cometd-websocket-jetty</artifactId>
+		<version>2.9.1</version>
+	</dependency>
+  	<dependency>
+		<groupId>org.cometd.java</groupId>
+		<artifactId>cometd-java-client</artifactId>
+		<version>2.9.1</version>
+	</dependency>
+	<dependency>
+		<groupId>org.eclipse.jetty</groupId>
+		<artifactId>jetty-websocket</artifactId>
+		<version>8.1.15.v20140411</version>
+	</dependency>
   </dependencies>
 </project>

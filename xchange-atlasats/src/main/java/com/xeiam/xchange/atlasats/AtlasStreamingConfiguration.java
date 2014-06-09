@@ -15,6 +15,10 @@ public class AtlasStreamingConfiguration implements
 	private boolean encryptedChannel;
 
 	private boolean keepAlive;
+	
+	public AtlasStreamingConfiguration() {
+	  this(10, 60000, 300000, false, true);
+	}
 
 	public AtlasStreamingConfiguration(int maxReconnectAttempts,
 			int reconnectWaitTimeInMs, int timeoutInMs,

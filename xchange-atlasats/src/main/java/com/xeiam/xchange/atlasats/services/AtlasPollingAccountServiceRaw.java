@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import si.mazi.rescu.ClientConfig;
-import si.mazi.rescu.JacksonConfigureListener;
+import si.mazi.rescu.jackson.JacksonConfigureListener;
 import si.mazi.rescu.RestProxyFactory;
 
 import com.xeiam.xchange.atlasats.AtlasExchangeSpecification;
