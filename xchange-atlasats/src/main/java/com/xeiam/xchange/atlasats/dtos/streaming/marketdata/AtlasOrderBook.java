@@ -17,15 +17,28 @@ public class AtlasOrderBook {
   
   public static OrderBook createFromJson(JsonNode json) {
     JsonNode quotes = json.get("quotes");
+    JsonNode symbol = json.get("symbol");
+    JsonNode currency = json.get("currency");
     List<LimitOrder> asks = new ArrayList<LimitOrder>();
     List<LimitOrder> bids = new ArrayList<LimitOrder>();
     Date timestamp = new Date();
-    CurrencyPair ccyPair = new CurrencyPair(json.get("symbol").textValue(),
-        json.get("currency").textValue());
+    CurrencyPair ccyPair;
     
-    for(JsonNode orderNode : quotes) {
+    if (quotes == null) {
+      throw new ExchangeException("Malformed order book data: missing quotes");
+    }
+    if (symbol == null) {
+      throw new ExchangeException("Malformed order book data: missing trade symbol");
+    }
+    if (currency == null) {
+      throw new ExchangeException("Malformed order book data: missing currency");
+    }
+    
+    ccyPair = new CurrencyPair(symbol.textValue(), currency.textValue());
+    
+    for (JsonNode orderNode : quotes) {
       LimitOrder order = createLimitOrderFromJson(orderNode, timestamp, ccyPair);
-      switch(order.getType()) {
+      switch (order.getType()) {
       case ASK:
         asks.add(order);
         break;
@@ -39,10 +52,10 @@ public class AtlasOrderBook {
   
   private static LimitOrder createLimitOrderFromJson(JsonNode orderNode, Date timestamp, CurrencyPair ccyPair) 
     throws ExchangeException {
-    //LimitOrder(OrderType type, BigDecimal tradableAmount, CurrencyPair currencyPair, String id, Date timestamp, BigDecimal limitPrice) {
     String side = orderNode.get("side").textValue();
     Order.OrderType orderType = Order.OrderType.ASK;
-    if("BUY".equals(side)) {
+    
+    if ("BUY".equals(side)) {
       orderType = Order.OrderType.BID;
     }
     else if("SELL".equals(side)) {
@@ -51,6 +64,7 @@ public class AtlasOrderBook {
     else {
       throw new ExchangeException("Invalid order side: '" + side + "'");
     }
+    
     BigDecimal quantity = orderNode.get("size").decimalValue();
     BigDecimal price = orderNode.get("price").decimalValue();
     String orderId = orderNode.get("id").textValue();

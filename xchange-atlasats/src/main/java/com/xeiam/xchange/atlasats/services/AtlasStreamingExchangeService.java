@@ -70,15 +70,13 @@ public class AtlasStreamingExchangeService
 
   @Override
   public synchronized void connect() {
-    String apiUrl = String.format("%s:%s", 
-        (configuration.isEncryptedChannel()
-            ? exchangeSpecification.getSslUriStreaming()
-                : exchangeSpecification.getPlainTextUriStreaming()),
-                exchangeSpecification.getPort(),
-                "/api/v1/streaming");
+    String apiUrl = configuration.isEncryptedChannel() 
+        ? exchangeSpecification.getSslUriStreaming()
+        : exchangeSpecification.getPlainTextUriStreaming();
     URI uri = URI.create(apiUrl);
     Map<String, Object> wsOpts = new HashMap<String, Object>();
     WebSocketTransport transport = new WebSocketTransport(wsOpts, wsFactory, null);
+    log.debug("Connecting to market data stream at " + uri.toString());
     client = new BayeuxClient(uri.toString(), transport);
     client.handshake();
     client.waitFor(1000, BayeuxClient.State.CONNECTED);
@@ -86,13 +84,14 @@ public class AtlasStreamingExchangeService
       subscribeOrderData();
     }
     catch(IOException e) {
-      log.error("Failed to subscribe to order book", e);
+      log.error("Failed to subscribe to market data stream", e);
+      disconnect();
     }
   }
 
   @Override
   public synchronized void disconnect() {
-    if(client != null) {
+    if (client != null) {
       client.disconnect();
       client.waitFor(1000, BayeuxClient.State.DISCONNECTED);
       client = null;
@@ -141,9 +140,10 @@ public class AtlasStreamingExchangeService
   @Override
   public READYSTATE getWebSocketStatus() {
     // READYSTATE: NOT_YET_CONNECTED, CONNECTING, OPEN, CLOSING, CLOSED;
-    if(client == null)
+    if (client == null)
       return READYSTATE.CLOSED;
-    if(client.isConnected())
+    
+    if (client.isConnected())
       return READYSTATE.OPEN;
     
     return READYSTATE.CLOSED;
@@ -178,7 +178,8 @@ public class AtlasStreamingExchangeService
         public void onMessage(ClientSessionChannel channel, Message message)
         {
           try {
-            String rawJSON = message.getJSON();
+            String rawJSON = (String)message.getData();
+            log.debug("JSON data received: '" + rawJSON + "'");
             ExchangeEvent orderBookEvent = new DefaultExchangeEvent(
                 ExchangeEventType.SUBSCRIBE_ORDERS,
                 rawJSON,

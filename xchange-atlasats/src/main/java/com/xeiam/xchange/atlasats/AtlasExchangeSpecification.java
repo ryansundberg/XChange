@@ -14,7 +14,8 @@ public class AtlasExchangeSpecification extends ExchangeSpecification {
 	public static final String TEST_HOST_NAME = "private-2da0-atlasxchange.apiary.io";
 	public static final String EXCHANGE_NAME = "Atlas ATS, Inc.";
 	public static final String DEFAULT_HOST_NAME = "atlasats.com";
-	public static final String SSL_STREAMING_URL = "https://data.atlasats.com:4000";
+	public static final String SSL_STREAMING_URL = "https://atlasats.com/api/v1/streaming";
+	public static final String PLAIN_STREAMING_URL = "http://atlasats.com/api/v1/streaming";
 	public static final String SSL_URL = "https://atlasats.com";
 
 	private JacksonConfigureListener jacksonConfigureListener;
@@ -38,6 +39,7 @@ public class AtlasExchangeSpecification extends ExchangeSpecification {
 		super(exchangeClass);
 		setExchangeName(EXCHANGE_NAME);
 		setHost(DEFAULT_HOST_NAME);
+		setPlainTextUriStreaming(PLAIN_STREAMING_URL);
 		setSslUri(SSL_URL);
 		setSslUriStreaming(SSL_STREAMING_URL);
 		setApiKey(apiKey);
